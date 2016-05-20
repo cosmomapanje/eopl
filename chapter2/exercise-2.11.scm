@@ -6,7 +6,7 @@
 ;;empty-env
 (define empty-env
  (lambda ()
-   '()))
+   (quote ())))
 
 ;;extend-env*
 (define extend-env*
@@ -23,7 +23,7 @@
 (define search-in-list
   (lambda (var list-vars list-vals)
     (cond 
-      ((null? (car list-vars))
+      ((null? list-vars)
        (cons #f '()))
       ((eqv? (car list-vars) var)
        (cons #t (car list-vals)))

@@ -30,7 +30,20 @@
 		   (cons (car list) (remove-first (cdr list) a))))))
 
 ;;; 1.24 occurs-free?
+;;; LcExp ::= Identifier
+;;;       ::= (lambda (Identifier) LcExp)
+;;;       ::= (LcExp)
 (define occurs-free?
-  (lambda (var exp)))
+  (lambda (sym exp)
+    (cond ((null? exp) #t)
+          ((symbol? exp)
+           (eqv? sym exp))
+          ((eqv? (car exp) 'lambda)
+           (and (not (eqv? sym (car (car (cdr exp)))))
+                (occurs-free? sym (car (cdr (cdr exp))))))
+          (else
+           (or (occurs-free? sym (car exp))
+               (occurs-free? sym (car (cdr exp))))))))
 
 ;;; 1.25 subst
+(define subst)

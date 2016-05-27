@@ -46,4 +46,13 @@
                (occurs-free? sym (car (cdr exp))))))))
 
 ;;; 1.25 subst
-(define subst)
+(define subst
+  (lambda (new old list)
+    (cond ((null? list) '())
+          ((symbol? (car list))
+           (if (eq? old (car list))
+               (cons new (subst new old (cdr list)))
+               (cons (car list) (subst new old (cdr list)))))
+          (else
+           (cons (subst new old (car list))
+                 (subst new old (cdr list)))))))

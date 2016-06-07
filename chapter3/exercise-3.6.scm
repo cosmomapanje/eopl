@@ -1,8 +1,6 @@
 #lang eopl
-(define error
-  (lambda (msg)
-    (display msg)))
-
+;;; Exercise 3.6
+;;; minus
 (define-datatype expval expval?
   (num-val
    (num number?))
@@ -44,10 +42,12 @@
       (const-exp (num) (num-val num))
       (var-exp (var) (apply-env env var))
       (diff-exp (exp1 exp2)
-                (let ((num1 (value-of exp1 env))
-                      (num2 (value-of exp2 env)))
-                  (num-val
-                   (- num1 num2))))
+                (let ((val1 (value-of exp1 env))
+                      (val2 (value-of exp2 env)))
+                  (let ((num1 (expval->num val1))
+                        (num2 (expval->num val2)))
+                    (num-val
+                     (- num1 num2)))))
       (zero?-exp (exp1)
                  (let ((val1 (value-of exp1 env)))
                    (let ((num1 (expval->num val1)))
@@ -62,7 +62,12 @@
       (let-exp (var exp1 body)
                (let ((val1 (value-of exp1 env)))
                  (value-of body
-                           (extend-env var val1 env)))))))
+                           (extend-env var val1 env))))
+      (minus-exp (exp1)
+                 (let ((val1 (value-of exp1 env)))
+                   (let ((num1 (expval->num val1)))
+                     (num-val
+                      (- 0 num1))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; sllgen
@@ -73,9 +78,7 @@
 (define the-lexical-spec
   '((whitespcae (whitespace) skip)
     (comment ("%" (arbno (not #\newline))) skip)
-    (identifier
-     (letter (arbno (or letter digit "_" "-" "?")))
-     symbol)
+    (identifier (letter (arbno (or letter digit "_" "-" "?"))) symbol)
     (number (digit (arbno digit)) number)
     (number ("-" digit (arbno digit)) number)))
 
@@ -86,7 +89,8 @@
     (expression ("zero?" "(" expression ")") zero?-exp)
     (expression ("if" expression "then" expression "else" expression) if-exp)
     (expression (identifier) var-exp)
-    (expression ("let" identifier "=" expression "in" expression) let-exp)))
+    (expression ("let" identifier "=" expression "in" expression) let-exp)
+    (expression ("minus" "(" expression ")") minus-exp)))
 
 (define-datatype program program?
   (a-program
@@ -109,7 +113,9 @@
   (let-exp
    (var identifier?)
    (exp1 expression?)
-   (body expression?)))
+   (body expression?))
+  (minus-exp
+   (exp1 expression?)))
 
 (define identifier?
   symbol?)
@@ -161,3 +167,6 @@
           (if (eqv? search-sym sym)
               val
               (apply-env old-env search-sym))))))
+(define error
+  (lambda (msg)
+    (display msg)))

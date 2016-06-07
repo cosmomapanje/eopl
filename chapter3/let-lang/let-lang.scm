@@ -1,8 +1,4 @@
 #lang eopl
-(define error
-  (lambda (msg)
-    (display msg)))
-
 (define-datatype expval expval?
   (num-val
    (num number?))
@@ -163,3 +159,6 @@
           (if (eqv? search-sym sym)
               val
               (apply-env old-env search-sym))))))
+(define error
+  (lambda (msg)
+    (display msg)))

@@ -12,11 +12,13 @@
 
 (define successor
   (lambda (diff-tree)
-    '()))
+    (list (car diff-tree)
+          (car (cdr diff-tree))
+          (list 'diff (car (cdr (cdr diff-tree))) '(one)))))
 
 (define predecessor
   (lambda (diff-tree)
-    '()))
+    (list 'diff diff-tree '(one))))
 
 (define calc
   (lambda (diff-tree)

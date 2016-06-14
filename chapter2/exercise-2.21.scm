@@ -13,7 +13,7 @@
   (empty-env)
   (extend-env
    (var env-var?)
-   (s-val scheme-val?)
+   (val scheme-val?)
    (env env-exp?)))
 
 (define scheme-val?
@@ -25,9 +25,19 @@
 (define apply-env
   (lambda (environment search-var)
     (cases env-exp environment
-      (empty-env ()
-                 (error 'no-binding-found))
-      (extend-env (var val env)
-                  (if (eqv? search-var var)
-                      val
-                      )))))
+		   (empty-env ()
+					  (error 'no-binding-found))
+		   (extend-env (var val env)
+					   (if (eqv? search-var var)
+						   val
+						   (apply-env env search-var))))))
+
+(define has-binding?
+  (lambda (environment search-var)
+	(cases env-exp environment
+		   (empty-env ()
+					  #f)
+		   (extend-env (var val env)
+					   (if (eqv? search-var var)
+						   #t
+						   (has-binding? env search-var))))))

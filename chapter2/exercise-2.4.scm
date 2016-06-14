@@ -3,26 +3,30 @@
   (lambda ()
     '()))
 
-;; empty-stack?
 (define empty-stack?
   (lambda (stack)
     (null? stack)))
 
-;; push
 (define push
   (lambda (item stack)
-    (cons (list item) stack)))
+    (set cons item stack)))
 
-;; pop
 (define pop
   (lambda (stack)
-    (cond ((null? stack)
-           empty-stack)
-          (else
-           (set! stack (cdr stack))
-           (car stack)))))
+    (if (empty-stack? stack)
+        (error '(nothing-in-stack))
+        '())))
 
-;; top
 (define top
   (lambda (stack)
-    '()))
+    (if (empty-stack? stack)
+        (error 'nothing-in-stack)
+        (car stack))))
+
+(define error
+  (lambda (msg)
+    (display msg)))
+
+;;; test
+
+(define e (push 4 (push 5 (push 3 empty-stack))))

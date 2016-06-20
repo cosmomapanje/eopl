@@ -1,32 +1,9 @@
-;; empty-stack
-(define empty-stack
-  (lambda ()
-    '()))
+;;; Exercise 2.4
+(empty-stack) = ()
+(push s stack) = (s stack)
+(pop stack) = (stack-without-first)
+(top stack) = (car stack)
+(empty-stack? stack) = #t if stack = ()
 
-(define empty-stack?
-  (lambda (stack)
-    (null? stack)))
-
-(define push
-  (lambda (item stack)
-    (set cons item stack)))
-
-(define pop
-  (lambda (stack)
-    (if (empty-stack? stack)
-        (error '(nothing-in-stack))
-        '())))
-
-(define top
-  (lambda (stack)
-    (if (empty-stack? stack)
-        (error 'nothing-in-stack)
-        (car stack))))
-
-(define error
-  (lambda (msg)
-    (display msg)))
-
-;;; test
-
-(define e (push 4 (push 5 (push 3 empty-stack))))
+;;; constructors: empty-stack, push, pop
+;;; observers: top empty-stack?

@@ -242,3 +242,27 @@
 (define error
   (lambda (msg)
     (display msg)))
+
+(define run&show
+  (lambda (prog)
+    (begin (display (run prog))
+	   (newline))))
+
+
+;;; test
+(run&show "5")
+(run&show "-(5,3)")
+(run&show "+(5,3)")
+(run&show "*(5,3)")
+(run&show "/(5,3)")
+(run&show "zero?(5)")
+(run&show "zero?(0)")
+(run&show "equal?(1,2)")
+(run&show "equal?(2,2)")
+(run&show "greater?(3,5)")
+(run&show "less?(3,5)")
+(run&show "x")
+(run&show "y")
+(run&show "let y = 100 in equal?(10, y)")
+(run&show "let y = 100 in equal?(100, y)")
+(run&show "minus(6)")

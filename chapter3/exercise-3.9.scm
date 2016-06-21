@@ -33,9 +33,32 @@
 ;;; expval->car : ExpVal -> car of ExpVal
 (define expval->car
   (lambda (val)
-	(cases expval val
-		   ())))
+    (cases expval val
+      (cons-val (first last)
+                first)
+      (else
+       (error 'expval-error)))))
+
 ;;; expval->cdr : ExpVal -> cdr of ExpVal
+(define expval->cdr
+  (lambda (val)
+    (cases expval val
+      (cons-val (first last)
+                last)
+      (else
+       (error 'expval-error)))))
+
+;;; expval->emptylist?
+(define expval->emptylist?
+  (lambda (val)
+    (cases expval val
+      (emptylist-val ()
+                     #t)
+      (cons-val (first last)
+                #f)
+      (else
+       (error 'not_list)))))
+
 ;;; run : String -> ExpVal
 (define run
   (lambda (string)
@@ -88,30 +111,30 @@
                      (if (zero? num1)
                          (bool-val #t)
                          (bool-val #f)))))
-	  (equal?-exp (exp1 exp2)
-				  (let ((val1 (value-of exp1 env))
-						(val2 (value-of exp2 env)))
-					(let ((num1 (expval->num val1))
-						  (num2 (expval->num val2)))
-					  (if (eqv? num1 num2)
-						  (bool-val #t)
-						  (bool-val #f)))))
-	  (greater?-exp (exp1 exp2)
-					(let ((val1 (value-of exp1 env))
-						  (val2 (value-of exp2 env)))
-					  (let ((num1 (expval->num val1))
-							(num2 (expval->num val2)))
-						(if (> num1 num2)
-							(bool-val #t)
-							(bool-val #f)))))
-	  (less?-exp (exp1 exp2)
-				 (let ((val1 (value-of exp1 env))
-					   (val2 (value-of exp2 env)))
-				   (let ((num1 (expval->num val1))
-						 (num2 (expval->num val2)))
-					 (if (< num1 num2)
-						 (bool-val #t)
-						 (bool-val #f)))))
+      (equal?-exp (exp1 exp2)
+                  (let ((val1 (value-of exp1 env))
+                        (val2 (value-of exp2 env)))
+                    (let ((num1 (expval->num val1))
+                          (num2 (expval->num val2)))
+                      (if (eqv? num1 num2)
+                          (bool-val #t)
+                          (bool-val #f)))))
+      (greater?-exp (exp1 exp2)
+                    (let ((val1 (value-of exp1 env))
+                          (val2 (value-of exp2 env)))
+                      (let ((num1 (expval->num val1))
+                            (num2 (expval->num val2)))
+                        (if (> num1 num2)
+                            (bool-val #t)
+                            (bool-val #f)))))
+      (less?-exp (exp1 exp2)
+                 (let ((val1 (value-of exp1 env))
+                       (val2 (value-of exp2 env)))
+                   (let ((num1 (expval->num val1))
+                         (num2 (expval->num val2)))
+                     (if (< num1 num2)
+                         (bool-val #t)
+                         (bool-val #f)))))
       (if-exp (exp1 exp2 exp3)
               (let ((val1 (value-of exp1 env)))
                 (if (expval->bool val1)
@@ -126,11 +149,25 @@
                    (let ((num1 (expval->num val1)))
                      (num-val
                       (- 0 num1)))))
-	  (cons-exp (exp1 exp2))
-	  (car-exp (exp1))
-	  (cdr-exp (exp1))
-	  (null?-exp (exp1))
-	  (emptylist-exp ()))))
+      (cons-exp (exp1 exp2)
+                (let ((val1 (value-of exp1 env))
+                      (val2 (value-of exp2 env)))
+                  (let ((c1 (expval->car val1))
+                        (c2 (expval->cdr val2)))
+                    (cons-val
+                     (cons c1 c2)))))
+      (car-exp (exp1)
+               (let ((val1 (value-of exp1 env)))
+                 (expval->car exp1)))
+      (cdr-exp (exp1)
+               (let ((val1 (value-of exp1 env)))
+                 (expval->cdr exp1)))
+      (null?-exp (exp1)
+                 (let ((val1 (value-of exp1 env)))
+                   (let ((bool1 (expval->emptylist? val1)))
+                     (bool-val bool1))))
+      (emptylist-exp ()
+                     emptylist-val))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; sllgen
@@ -153,18 +190,18 @@
     (expression ("*" "(" expression "," expression ")") multi-exp)
     (expression ("/" "(" expression "," expression ")") quotient-exp)
     (expression ("zero?" "(" expression ")") zero?-exp)
-	(expression ("equal?" "(" expression "," expression ")") equal?-exp)
-	(expression ("greater?" "(" expression "," expression ")") greater?-exp)
-	(expression ("less?" "(" expression "," expression ")") less?-exp)
+    (expression ("equal?" "(" expression "," expression ")") equal?-exp)
+    (expression ("greater?" "(" expression "," expression ")") greater?-exp)
+    (expression ("less?" "(" expression "," expression ")") less?-exp)
     (expression ("if" expression "then" expression "else" expression) if-exp)
     (expression (identifier) var-exp)
     (expression ("let" identifier "=" expression "in" expression) let-exp)
     (expression ("minus" "(" expression ")") minus-exp)
-	(expression ("cons" "(" expression expression ")") cons-exp)
-	(expression ("car" "(" expression ")") car-exp)
-	(expression ("cdr" "(" expression ")") cdr-exp)
-	(expression ("null?" "(" expression ")") null?-exp)
-	(expression ("emptylist") emptylist-exp)))
+    (expression ("cons" "(" expression expression ")") cons-exp)
+    (expression ("car" "(" expression ")") car-exp)
+    (expression ("cdr" "(" expression ")") cdr-exp)
+    (expression ("null?" "(" expression ")") null?-exp)
+    (expression ("emptylist") emptylist-exp)))
 
 (define-datatype program program?
   (a-program
@@ -215,8 +252,9 @@
    (exp1 expression?))
   (cdr-exp
    (exp1 expression?))
-  (null?-exp)
-  (emptylist))
+  (null?-exp
+   (exp1 expression?))
+  (emptylist-exp))
 
 (define identifier?
   symbol?)
@@ -271,3 +309,26 @@
 (define error
   (lambda (msg)
     (display msg)))
+
+(define run&show
+  (lambda (prog)
+    (begin (display (run prog))
+           (newline))))
+
+;;; test
+(run&show "5")
+(run&show "-(5,3)")
+(run&show "+(5,3)")
+(run&show "*(5,3)")
+(run&show "/(5,3)")
+(run&show "zero?(5)")
+(run&show "zero?(0)")
+(run&show "equal?(1,2)")
+(run&show "equal?(2,2)")
+(run&show "greater?(3,5)")
+(run&show "less?(3,5)")
+(run&show "x")
+(run&show "y")
+(run&show "let y = 100 in equal?(10, y)")
+(run&show "let y = 100 in equal?(100, y)")
+(run&show "minus(6)")

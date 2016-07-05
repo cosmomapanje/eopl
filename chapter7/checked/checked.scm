@@ -26,10 +26,15 @@
 		     (check-equal-type! ty1 (bool-type) exp1)
 		     (check-equal-type! ty2 ty3 exp)
 		     ty2))
-	   (let-exp)
-	   (proc-exp)
-	   (call-exp)
-	   (letrec-exp))))
+	   (let-exp (var exp1 body)
+		    (let ((exp1-type (type-of exp1 tenv)))
+		      (type-of body (extend-tenv var exp1-type tenv))))
+	   (proc-exp (var body)
+		     ())
+	   (call-exp (exp1 exp2)
+		     ())
+	   (letrec-exp (p-name b-var p-body letrec-body)
+		       ()))))
 
 (define-datatype proc proc?
   (procedure

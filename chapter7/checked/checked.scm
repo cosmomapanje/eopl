@@ -1,8 +1,40 @@
 #lang eopl
+(define run-typechecker
+  (lambda (string)
+    (type-of-program (scan&parse string))))
+
 (define type-of-program
   (lambda (pgm)
     (cases program pgm
 		   (a-program (exp1) (type-of exp1 (init-tenv))))))
+
+(define check-equal-type!
+  (lambda (ty1 ty2 exp)
+    (cond ((not (equal? ty1 ty2))
+           (error 'not-equal-type-check)))))
+
+(define type-to-external-form
+  (lambda (ty)
+    (cases type ty
+      (int-type () 'int)
+      (bool-type () 'bool)
+      (proc-type (arg-type result-type)
+                 (list (type-to-external-form arg-type)
+                       '->
+                       (type-to-external-form result-type))))))
+
+(define-datatype type type?
+  (int-type)
+  (bool-type)
+  (proc-type
+   (arg-type type?)
+   (result-type type?)))
+
+;(define int-type? number?)
+(define bool-type?
+  (lambda (x)
+    (or (eqv? x #t)
+        (eqv? x #f))))
 
 (define type-of
   (lambda (exp tenv)
@@ -29,7 +61,7 @@
 		   (let-exp (var exp1 body)
 					(let ((exp1-type (type-of exp1 tenv)))
 					  (type-of body (extend-tenv var exp1-type tenv))))
-		   (proc-exp (var body)
+		   (proc-exp (var var-type body)
 					 (let ((result-type (type-of body (extend-tenv var  var-type tenv))))
 					   (proc-type var-type result-type)))
 		   (call-exp (exp1 exp2)
@@ -41,7 +73,7 @@
 										   (check-equal-type! arg-type exp2-type exp2)
 										   result-type))
 							  (else
-							   ()))))
+							   (error 'call-exp-found-a-untyped)))))
 		   (letrec-exp (p-result-type p-name b-var b-var-type p-body letrec-body)
 					   (let ((tenv-for-letrec-body
 							  (extend-tenv p-name
@@ -138,14 +170,14 @@
 					(let ((val1 (value-of exp1 env)))
 					  (value-of body
 								(extend-env var val1 env))))
-		   (proc-exp (var body)
+		   (proc-exp (var ty body)
 					 (proc-val (procedure var body env)))
 		   (call-exp (exp1 exp2)
 					 (let ((v1 (value-of exp1 env))
 						   (v2 (value-of exp2 env)))
 					   (let ((proc (expval->proc v1)))
 						 (apply-procedure proc v2))))
-		   (letrec-exp (p-name b-var p-body letrec-body)
+		   (letrec-exp (ty1 p-name b-var ty2 p-body letrec-body)
 					   (value-of letrec-body
 								 (extend-env-rec p-name b-var p-body env))))))
 
@@ -172,9 +204,12 @@
     (expression ("if" expression "then" expression "else" expression) if-exp)
     (expression (identifier) var-exp)
     (expression ("let" identifier "=" expression "in" expression) let-exp)
-    (expression ("proc" "(" identifier ")" expression) proc-exp)
+    (expression ("proc" "(" identifier ":" type ")" expression) proc-exp)
     (expression ("(" expression expression")") call-exp)
-    (expression ("letrec" identifier "(" identifier ")" "=" expression "in" expression) letrec-exp)))
+    (expression ("letrec" type identifier "(" identifier ":" type ")" "=" expression "in" expression) letrec-exp)
+    (type ("int") int-type)
+    (type ("bool") bool-type)
+    (type ("(" type "->" type ")") proc-type)))
 
 (define-datatype program program?
   (a-program
@@ -200,13 +235,16 @@
    (body expression?))
   (proc-exp
    (var identifier?)
+   (var-type type?)
    (body expression?))
   (call-exp
    (exp1 expression?)
    (exp2 expression?))
   (letrec-exp
+   (ret-type type?)
    (p-name identifier?)
    (b-var identifier?)
+   (var-type type?)
    (p-body expression?)
    (letrec-body expression?)))
 
@@ -228,8 +266,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; env
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define-datatype type-environment type-environment?
+  (empty-tenv-record)
+  (extend-tenv-record
+   (sym symbol?)
+   (type type?)
+   (tenv type-environment?)))
 
-										; init-env : () -> Env
+(define init-tenv
+  (lambda ()
+    (extend-tenv 'x (int-type)
+                 (extend-tenv 'v (int-type)
+                              (extend-tenv 'i (int-type)
+                                           (empty-tenv))))))
+(define empty-tenv empty-tenv-record)
+(define extend-tenv extend-tenv-record)
+
+; init-env : () -> Env
 (define init-env
   (lambda ()
     (extend-env
@@ -268,6 +321,15 @@
 							   (proc-val (procedure b-var body env))
 							   (apply-env old-env search-var))))))
 
+(define apply-tenv
+  (lambda (tenv sym)
+    (cases type-environment tenv
+      (empty-tenv-record ()
+                         (error 'apply-tenv-unbound-variable))
+      (extend-tenv-record (sym1 val1 old-env)
+                          (if (eqv? sym sym1)
+                              val1
+                              (apply-tenv old-env sym))))))
 (define error
   (lambda (msg)
     (display msg)))
@@ -278,7 +340,13 @@
     (begin (display (run prog))
            (newline))))
 
+(define runtc&show
+  (lambda (prog)
+    (begin (display (run-typechecker prog))
+           (newline))))
+
 (run&show "-(1, 2)")
-(run&show "letrec double(x)
-            = if zero?(x) then 0 else -((double -(x,1)), -2)
-       in (double 6)")
+(runtc&show "-(1, 2)")
+(runtc&show "zero?(0)")
+(runtc&show "zero?(1)")
+(runtc&show "let f = proc (x:int) -(x, 11) in (f 77)")

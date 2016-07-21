@@ -4,7 +4,7 @@
 ;;; procedure : vble * expression * env -> proc
 (define-datatype proc proc?
   (procedure
-   (var symbol?)
+   (var (list-of symbol?))
    (body expression?)
    (env environment?)))
 
@@ -21,7 +21,7 @@
   (lambda (proc1 val)
     (cases proc proc1
       (procedure (var body env)
-                 (value-of body (extend-env var val env))))))
+                 (value-of body (extends-env var val env))))))
 
 (define-datatype expval expval?
   (num-val
@@ -99,7 +99,8 @@
                 (proc-val (procedure var body env)))
       (call-exp (exp1 exp2)
                 (let ((v1 (value-of exp1 env))
-                      (v2 (value-of exp2 env)))
+                      (v2 (map (lambda (e)
+                                 (value-of e env)) exp2)))
                   (let ((proc (expval->proc v1)))
                     (apply-procedure proc v2))))
       (letproc-exp (name var exp body)
@@ -132,7 +133,7 @@
     (expression ("let" identifier "=" expression "in" expression) let-exp)
     (expression ("proc" "(" (arbno identifier) ")" expression) proc-exp)
     (expression ("(" expression (arbno expression) ")") call-exp)
-    (expression ("letproc" identifier "(" identifier ")" "=" expression "in" expression) letproc-exp)))
+    (expression ("letproc" identifier "(" (arbno identifier) ")" "=" expression "in" expression) letproc-exp)))
 
 (define-datatype program program?
   (a-program
@@ -164,7 +165,7 @@
    (exp2 (list-of expression?)))
   (letproc-exp
    (name identifier?)
-   (var identifier?)
+   (var (list-of identifier?))
    (exp expression?)
    (body expression?)))
 
@@ -195,6 +196,16 @@
 (define extend-env
   (lambda (sym val env)
     (cons (list sym val) env)))
+
+(define extends-env
+  (lambda (syms vals env)
+    (cond ((null? syms)
+           (if (null? vals) env
+               (error 'proc-didnot-match-args)))
+          ((null? vals)
+           (error 'proc-didnot-match-args))
+          (else
+           (extends-env (cdr syms) (cdr vals) (cons (list (car syms) (car vals)) env))))))
 
 (define extended-env->sym
   (lambda (e)
@@ -229,11 +240,13 @@
            (newline))))
 
 (run&show "let f = proc (x) -(x,1) in (f 3)")
+(run&show "let f = proc (x y) -(x, y) in (f 2 3)")
 (run&show "let x = 200
            in let f = proc (z) -(z, x)
               in let x = 100
                  in let g = proc (z) -(z, x)
                     in -((f 1), (g 1))")
 (run&show "let sum = proc(x) proc(y) -(x, -(0,y)) in ((sum 10) 3)")
+(run&show "let sum = proc(x y) -(x, -(0,y)) in (sum 10 3)")
 ;;; letproc id (id) = exp in exp
 (run&show "letproc sub  (x) = -(x, 1) in -((sub 5), 4)")

@@ -1,0 +1,31 @@
+let makerec = proc (f)
+               let d = proc (x)
+                        proc (z) ((f (x x)) z)
+               in proc (n) ((f (d d)) n)
+in let maketimes4 = proc (f)
+                     proc (x)
+                      if zero?(x)
+                      then 0
+                      else -((f -(x,1)), -4)
+   in let times4 = (makerec maketimes4)
+      in (times4 3)
+
+(times4 3)
+====>
+((makerec maketimes4) 3)
+====>
+((proc (n) ((maketimes4 (d d)) n)) 3)
+((maketimes4 (d d)) 3)
+-(((d d) 2), -4)
+-(((proc (z) ((maketimes4 (d d)) z)) 2), -4)
+-(((maketimes4 (d d)) 2), -4)
+-(-(((d d) 1), -4), -4)
+-(-(((proc (z) ((maketimes4 (d d)) z)) 1), -4), -4)
+-(-(((maketimes4 (d d)) 1), -4), -4)
+-(-(-(((d d) 0), -4), -4), -4)
+-(-(-(((proc (z) ((maketimes4 (d d)) z)) 0), -4), -4), -4)
+-(-(-(((maketimes4 (d d)) 0), -4), -4), -4)
+-(-(-(0, -4), -4), -4)
+-(-(4, -4), -4)
+-(8, -4)
+12

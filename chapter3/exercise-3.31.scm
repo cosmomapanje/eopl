@@ -1,4 +1,4 @@
-;;; Exercise 3.32
+;;; Exercise 3.31
 #lang eopl
 (define-datatype proc proc?
   (procedure
@@ -88,16 +88,13 @@
       (proc-exp (var body)
                 (proc-val (procedure var body env)))
       (call-exp (exp1 exp2)
+                (begin (display exp1)
+                       (newline)
+                       (display exp2)
+                       (newline)
+                       (display env)
                 (let ((v1 (value-of exp1 env))
                       (v2 (value-of exp2 env)))
-                  (begin (display 'v1--->)
-                         (display v1)
-                         (newline)
-                         (newline)
-                         (display 'v2--->)
-                         (display v2)
-                         (newline)
-                         (newline)
                   (let ((proc (expval->proc v1)))
                     (apply-procedure proc v2)))))
       (letrec-exp (p-name b-var p-body letrec-body)
@@ -129,7 +126,7 @@
     (expression ("let" identifier "=" expression "in" expression) let-exp)
     (expression ("proc" "(" identifier ")" expression) proc-exp)
     (expression ("(" expression expression")") call-exp)
-    (expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp)))
+    (expression ("letrec" identifier "(" (arbno identifier) ")" "=" expression "in" expression) letrec-exp)))
 
 (define-datatype program program?
   (a-program
@@ -160,9 +157,9 @@
    (exp1 expression?)
    (exp2 expression?))
   (letrec-exp
-   (p-name (list-of identifier?))
+   (p-name identifier?)
    (b-var (list-of identifier?))
-   (p-body (list-of expression?))
+   (p-body expression?)
    (letrec-body expression?)))
 
 (define-datatype environment environment?
@@ -172,9 +169,9 @@
    (bval expval?)
    (saved-env environment?))
   (extend-env-rec
-   (id (list-of symbol?))
+   (id symbol?)
    (bvar (list-of symbol?))
-   (body (list-of expression?))
+   (body expression?)
    (saved-env environment?)))
 
 (define identifier?
@@ -219,11 +216,9 @@
                       val
                       (apply-env old-env search-var)))
       (extend-env-rec (p-name b-var body old-env)
-                      (if (null? p-name)
-                          (apply-env old-env search-var)
-                          (if (eqv? (car p-name) search-var)
-                              (proc-val (procedure (car b-var) (car body) env))
-                              (apply-env (extend-env-rec (cdr p-name) (cdr b-var) (cdr body) old-env) search-var)))))))
+                      (if (eqv? p-name search-var)
+                          (proc-val (procedure b-var body env))
+                          (apply-env old-env search-var))))))
 
 (define extend-env-rec*
   (lambda (p-name b-var body old-env)
@@ -249,7 +244,5 @@
 
 ;(run&show "-(1, 2)")
 ;(run&show "letrec double(x) = if zero?(x) then 0 else -((double -(x,1)), -2) in (double 6)")
-(run&show "letrec
-             even(x) = if zero?(x) then 1 else (odd -(x, 1))
-             odd(x)  = if zero?(x) then 0 else (even -(x, 1))
-           in (odd 13)")
+(run&show "letrec equal?(x y) = if zero?(-(x, y)) then 0 else 1 in (equal?(2 2))")
+

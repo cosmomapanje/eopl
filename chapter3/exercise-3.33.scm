@@ -89,9 +89,14 @@
                 (proc-val (procedure var body env)))
       (call-exp (exp1 exp2)
                 (let ((v1 (value-of exp1 env))
-                      (v2 (value-of exp2 env)))
+                      (v2 (map (lambda (exp) (value-of exp env)) exp2)))
+                  (begin (display v1)
+                         (newline)
+                         (newline)
+                         (display v2)
+                         (newline)
                   (let ((proc (expval->proc v1)))
-                    (apply-procedure proc v2))))
+                    (apply-procedure proc v2)))))
       (letrec-exp (p-name b-var p-body letrec-body)
                   (value-of letrec-body
                             (extend-env-rec p-name b-var p-body env))))))
@@ -220,12 +225,17 @@
                       val
                       (apply-env old-env search-var)))
       (extend-env-rec (p-name b-var body old-env)
+                      (begin (display p-name)
+                             (newline)
+                             (display b-var)
+                             (newline)
                       (if (null? p-name)
                           (apply-env old-env search-var)
                           (let ((res (has-proc? search-var p-name b-var body)))
                             (if (car res)
                                 (proc-val (procedure (cadr res) (caddr res) env))
-                                (apply-env old-env search-var))))))))
+                                (apply-env old-env search-var)))))))))
+;;; procedure b-var is a list, not a var
 
 (define extend-env-rec*
   (lambda (p-name b-var body old-env)

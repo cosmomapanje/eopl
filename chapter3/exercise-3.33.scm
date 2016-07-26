@@ -1,4 +1,4 @@
-;;; Exercise 3.32
+;;; Exercise 3.33
 #lang eopl
 (define-datatype proc proc?
   (procedure
@@ -120,8 +120,8 @@
     (expression (identifier) var-exp)
     (expression ("let" identifier "=" expression "in" expression) let-exp)
     (expression ("proc" "(" identifier ")" expression) proc-exp)
-    (expression ("(" expression expression")") call-exp)
-    (expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp)))
+    (expression ("(" expression (arbno expression)")") call-exp)
+    (expression ("letrec" (arbno identifier "(" (arbno identifier) ")" "=" expression) "in" expression) letrec-exp)))
 
 (define-datatype program program?
   (a-program
@@ -150,10 +150,10 @@
    (body expression?))
   (call-exp
    (exp1 expression?)
-   (exp2 expression?))
+   (exp2 (list-of expression?)))
   (letrec-exp
    (p-name (list-of identifier?))
-   (b-var (list-of identifier?))
+   (b-var (list-of (list-of identifier?)))
    (p-body (list-of expression?))
    (letrec-body expression?)))
 
@@ -165,7 +165,7 @@
    (saved-env environment?))
   (extend-env-rec
    (id (list-of symbol?))
-   (bvar (list-of symbol?))
+   (bvar (list-of (list-of symbol?)))
    (body (list-of expression?))
    (saved-env environment?)))
 
@@ -255,3 +255,8 @@
              even(x) = if zero?(x) then 1 else (odd -(x, 1))
              odd(x)  = if zero?(x) then 0 else (even -(x, 1))
            in (odd 12)")
+
+(run&show "letrec
+             first(x y) = if zero?(x) then -(0, y) else (second -(x, 1) y)
+             second(x y) = if zero?(y) then -(x, 0) else (first x -(y, 1))
+             in (first 3 4)")

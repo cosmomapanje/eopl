@@ -1,4 +1,4 @@
-;;; explicit-refs
+;;; Exercise 4.10
 #lang eopl
 (define-datatype proc proc?
   (procedure
@@ -118,7 +118,16 @@
                     (let ((val2 (value-of exp2 env)))
                       (begin
                         (setref! ref val2)
-                        (num-val 23))))))))
+                        (num-val 23)))))
+      (begin-exp (exp1 exps)
+                 (letrec
+                     ((value-of-begin-exps
+                       (lambda (e1 es)
+                         (let ((v1 (value-of e1 env)))
+                           (if (null? es)
+                               v1
+                               (value-of-begin-exps (car es) (cdr es)))))))
+                   (value-of-begin-exps exp1 exps))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; store
@@ -202,7 +211,8 @@
     (expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp)
     (expression ("newref" "(" expression ")") newref-exp)
     (expression ("deref" "(" expression ")") deref-exp)
-    (expression ("setref" "(" expression "," expression ")") setref-exp)))
+    (expression ("setref" "(" expression "," expression ")") setref-exp)
+    (expression ("begin" expression (arbno ";" expression) "end") begin-exp)))
 
 (define-datatype program program?
   (a-program
@@ -243,7 +253,10 @@
    (exp1 expression?))
   (setref-exp
    (exp1 expression?)
-   (exp2 expression?)))
+   (exp2 expression?))
+  (begin-exp
+   (exp1 expression?)
+   (exps (list-of expression?))))
 
 (define-datatype environment environment?
   (empty-env)
@@ -345,6 +358,21 @@
              odd(x)  = if zero?(x) then 0 else (even -(x, 1))
            in (odd 12)")
 (run&show "let g = proc (dummy)
-                     let counter = newref(2)
-                     in deref(counter)
-           in (g 5)")
+                     let counter = newref(0)
+                     in begin
+                         setref(counter, -(deref(counter), -1));
+                         deref(counter)
+                        end
+           in let a = (g 11)
+              in let b = (g 11)
+                 in -(a, b)")
+
+(run&show "let g = let counter = newref(0)
+                   in proc (dummy)
+                       begin
+                        setref(counter, -(deref(counter), -1));
+                        deref(counter)
+                       end
+           in let a = (g 11)
+              in let b = (g 11)
+                 in -(a, b)")
